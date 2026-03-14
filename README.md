@@ -34,3 +34,4 @@ npm start
 ```
 
 Abra `http://localhost:4173`.
+Link da página do projeto: https://iangama.github.io/pokemon/
