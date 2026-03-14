@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Poké Tactics Arena</title>
+    <meta
+      name="description"
+      content="Card game tático 1v1 no navegador usando dados reais da PokéAPI."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-bg"></div>
+
+    <div id="loading-overlay" class="loading-overlay hidden" aria-live="polite">
+      <div class="loader-card">
+        <div class="loader-spinner"></div>
+        <p id="loading-text">Carregando dados da PokéAPI...</p>
+      </div>
+    </div>
+
+    <main class="shell">
+      <section id="start-screen" class="screen start-screen active">
+        <header class="start-hero">
+          <p class="kicker">Browser Card Game</p>
+          <h1>Poké Tactics Arena</h1>
+          <p>
+            Monte sua mão, escolha sua carta e vença batalhas táticas por turnos
+            usando estatísticas, tipos e sprites reais da PokéAPI.
+          </p>
+        </header>
+
+        <div class="start-panel">
+          <div class="field-group">
+            <label for="difficulty">Dificuldade da IA</label>
+            <select id="difficulty">
+              <option value="easy">Fácil</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Difícil</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="deck-archetype">Deck Inicial</label>
+            <select id="deck-archetype">
+              <option value="balanced" selected>Balanceado</option>
+              <option value="fire">Fogo</option>
+              <option value="water">Água</option>
+              <option value="grass">Planta</option>
+              <option value="electric">Elétrico</option>
+            </select>
+          </div>
+          <div class="deck-builder">
+            <div class="deck-builder-head">
+              <strong>Montagem de Deck</strong>
+              <span id="deck-select-info">Selecionadas: 0/0</span>
+            </div>
+            <button id="refresh-deck-options" class="btn btn-ghost" type="button">
+              Gerar Opções de Cartas
+            </button>
+            <div class="deck-builder-actions">
+              <button id="auto-fill-deck" class="btn btn-ghost" type="button">Auto Completar</button>
+              <button id="clear-deck-selection" class="btn btn-ghost" type="button">Limpar Seleção</button>
+            </div>
+            <div class="deck-builder-filters">
+              <input
+                id="starter-search"
+                type="search"
+                placeholder="Buscar carta por nome"
+                autocomplete="off"
+              />
+              <select id="starter-type-filter">
+                <option value="all">Todos os tipos</option>
+              </select>
+            </div>
+            <p id="deck-validation" class="map-help"></p>
+            <div id="starter-card-pool" class="starter-card-pool"></div>
+          </div>
+
+          <button id="start-button" class="btn btn-primary">Começar Partida</button>
+          <button id="how-button" class="btn btn-ghost">Como Jogar</button>
+
+          <div id="last-result" class="last-result"></div>
+          <div id="history-summary" class="history-summary"></div>
+          <ul id="history-list" class="history-list"></ul>
+          <button id="clear-history" class="btn btn-ghost" type="button">
+            Limpar Histórico
+          </button>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen">
+        <header class="hud">
+          <div>
+            <p class="kicker">Turno Atual</p>
+            <h2 id="turn-indicator">Jogador</h2>
+          </div>
+          <div class="hud-meta">
+            <span id="deck-info">Decks: 0 x 0</span>
+            <span id="hand-info">Mão: 0</span>
+            <span id="coin-info">Moedas: 0</span>
+          </div>
+          <button id="open-shop" class="btn btn-ghost" type="button">Loja</button>
+          <button id="restart-button" class="btn btn-danger">Reiniciar</button>
+        </header>
+
+        <section class="arena">
+          <article class="panel enemy-panel">
+            <div class="panel-title-row">
+              <h3>Inimigo</h3>
+              <span id="enemy-remaining" class="panel-badge"></span>
+            </div>
+            <div id="enemy-field" class="field-slot"></div>
+            <div id="enemy-hand" class="enemy-hand"></div>
+          </article>
+
+          <article class="panel battle-panel">
+            <div id="type-feedback" class="type-feedback">Aguardando ação...</div>
+            <div id="battle-spark" class="battle-spark"></div>
+            <button id="attack-button" class="btn btn-primary">Atacar</button>
+            <div class="item-actions">
+              <button id="use-potion" class="btn btn-ghost" type="button">Poção (0)</button>
+              <button id="use-super-potion" class="btn btn-ghost" type="button">Super Poção (0)</button>
+              <button id="use-reviver" class="btn btn-ghost" type="button">Reviver (0)</button>
+              <button id="use-battle-tonic" class="btn btn-ghost" type="button">Tônico (0)</button>
+            </div>
+            <p id="progression-info" class="map-help">Sem carta ativa para progresso.</p>
+            <p class="battle-tip">Escolha uma carta na sua mão para colocar no campo.</p>
+          </article>
+
+          <article class="panel player-panel">
+            <div class="panel-title-row">
+              <h3>Jogador</h3>
+              <span id="player-remaining" class="panel-badge"></span>
+            </div>
+            <div id="player-field" class="field-slot"></div>
+            <div id="player-hand" class="player-hand"></div>
+          </article>
+        </section>
+
+        <section class="panel map-panel">
+          <div class="panel-title-row">
+            <h3>Minimapa de Exploração</h3>
+            <span id="map-status" class="panel-badge">Passos: 0</span>
+          </div>
+          <div class="biome-legend" id="biome-legend"></div>
+          <div class="map-layout">
+            <div id="minimap-grid" class="minimap-grid"></div>
+            <div class="map-controls">
+              <button id="move-up" class="btn btn-ghost" type="button">↑</button>
+              <div class="map-mid-row">
+                <button id="move-left" class="btn btn-ghost" type="button">←</button>
+                <button id="move-right" class="btn btn-ghost" type="button">→</button>
+              </div>
+              <button id="move-down" class="btn btn-ghost" type="button">↓</button>
+            </div>
+          </div>
+          <p class="map-help">Use botões, setas do teclado ou WASD para caminhar.</p>
+          <p id="map-event" class="map-event">Movimente-se para encontrar eventos aleatórios.</p>
+        </section>
+
+        <section id="shop-panel" class="panel shop-panel">
+          <div class="panel-title-row">
+            <h3>Loja do Explorador</h3>
+            <span id="shop-status" class="panel-badge">Estoque disponível</span>
+          </div>
+          <p class="map-help">
+            Compre itens e serviços fora de batalha. O bioma atual pode dar descontos.
+          </p>
+          <div class="shop-toolbar">
+            <span id="shop-coins-inline" class="panel-badge">Moedas: 0</span>
+            <button id="reroll-shop" class="btn btn-ghost" type="button">Atualizar Estoque</button>
+          </div>
+          <div id="shop-stock" class="shop-stock"></div>
+          <p id="shop-note" class="map-event">A loja está pronta.</p>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-title-row">
+            <h3>Log de Batalha</h3>
+          </div>
+          <ul id="event-log" class="event-log"></ul>
+        </section>
+      </section>
+    </main>
+
+    <div id="result-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2 id="result-title">Vitória</h2>
+        <p id="result-subtitle"></p>
+        <button id="play-again-button" class="btn btn-primary">Jogar Novamente</button>
+      </div>
+    </div>
+
+    <div id="tutorial-modal" class="modal hidden">
+      <div class="modal-card tutorial-card">
+        <h2>Como Funciona</h2>
+        <ul>
+          <li>Você começa com deck/mão inicial e os inimigos aparecem em encontros no mapa.</li>
+          <li>Escolha um deck inicial antes de começar.</li>
+          <li>Escolha uma carta da mão para colocar no campo.</li>
+          <li>Clique em atacar para resolver o turno.</li>
+          <li>Tipo, ataque, defesa e velocidade influenciam o dano.</li>
+          <li>No minimapa, encontros aleatórios dão XP e evolução para suas cartas.</li>
+          <li>Você pode encontrar Poções e Reviver para sustentar seu time nas batalhas.</li>
+          <li>A Loja do Explorador fica dentro da partida com estoque, descontos por bioma e serviços.</li>
+          <li>A cada 3 níveis, você decide se evolui sua carta.</li>
+          <li>Vence quem eliminar todas as cartas adversárias.</li>
+        </ul>
+        <button id="close-tutorial" class="btn btn-ghost">Fechar</button>
+      </div>
+    </div>
+
+    <div id="evolution-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Evolução Disponível</h2>
+        <p id="evolution-text"></p>
+        <div class="evolution-actions">
+          <button id="evolve-now-button" class="btn btn-primary" type="button">Evoluir</button>
+          <button id="evolve-later-button" class="btn btn-ghost" type="button">Depois</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reviver-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Escolha Quem Reviver</h2>
+        <div id="reviver-list" class="shop-list"></div>
+        <button id="close-reviver-modal" class="btn btn-ghost" type="button">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="shop-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Loja Entre Encontros</h2>
+        <p id="shop-coins">Moedas: 0</p>
+        <div class="shop-list">
+          <button id="buy-potion" class="btn btn-ghost" type="button">Poção (20)</button>
+          <button id="buy-super-potion" class="btn btn-ghost" type="button">Super Poção (35)</button>
+          <button id="buy-reviver" class="btn btn-ghost" type="button">Reviver (50)</button>
+          <button id="buy-battle-tonic" class="btn btn-ghost" type="button">Tônico (30)</button>
+        </div>
+        <button id="close-shop" class="btn btn-primary" type="button">Fechar Loja</button>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

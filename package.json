@@ -1,0 +1,9 @@
+{
+  "name": "pokemon-api-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Pokemon explorer powered by the PokeAPI.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
